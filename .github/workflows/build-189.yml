@@ -1,0 +1,36 @@
+name: Build Celeritas 1.8.9
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CELERITAS_DISABLE_DECOMP: 'true'
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: |
+            8
+            17
+            21
+      - uses: gradle/actions/setup-gradle@v4.4.4
+      - name: Package Ornithe 1.8.9
+        run: ./gradlew -Pceleritas_target_versions=1.8.9 -Pceleritas_target_subprojects=ornithe packageJar --stacktrace
+      - name: List outputs and checksums
+        run: find build/libs -type f -name '*.jar' -print -exec sha256sum {} \;
+      - uses: actions/upload-artifact@v4
+        with:
+          name: celeritas-1.8.9-ornithe
+          path: build/libs/**/*.jar
+          if-no-files-found: error
